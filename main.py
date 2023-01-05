@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import requests
 import re
-import sys
 import os
 import io
 import ocrmypdf
@@ -28,7 +27,7 @@ def fetch_folder(foldertitle, folderurl, depth = 0):
 			fetch_folder(title, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="folder-link")['href'], depth + 1)
 		if 'document-item' in item['class']:
 			documenttitle = item.find(class_="document-name", attrs={"lang": "en"}).text
-			print(documenttitle)
+			print(f'  {documenttitle}')
 			fetch_document(documenttitle, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="document-link")['href'])
 
 		if depth == 0:
