@@ -6,7 +6,7 @@ import io
 import ocrmypdf
 import base64
 import tempfile
-from PIL import Image
+import img2pdf
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://aip.dfs.de/basicVFR/'
@@ -38,19 +38,17 @@ def fetch_document(documenttitle, documenturl):
 	response = requests.get(documenturl)
 	html = BeautifulSoup(response.text, 'lxml')
 	#print(response.status_code)
-	image = html.main.find('img')
-	imagedata = base64.b64decode(re.sub(r'^data:image/png;base64,', '', image['src']))
-	images.append(Image.open(io.BytesIO(imagedata)).convert('RGB'))
+	image = html.main.find('img', id='imgAIP').get('src')
+	imagedata = image.split('data:image/png;base64,')[1]
+	images.append(base64.decodebytes(imagedata.encode('ascii')))
 
 def generate_pdf(title):
 	global images
-	first_image = images[0]
-	images.pop(0)
-	tmpfile = tempfile.mkstemp()[1]
-	first_image.save(tmpfile, format='pdf', save_all=True, append_images=images)
+	tmp = tempfile.NamedTemporaryFile(suffix='.pdf')
+	tmp.write(img2pdf.convert(images))
+	ocrmypdf.ocr(input_file=tmp.name, output_file=f'output/{title}.pdf')
+	tmp.close()
 	images = []
-	ocrmypdf.ocr(input_file = tmpfile, output_file = f'output/{title}.pdf')
-	os.unlink(tmpfile)
 
 response = requests.get(BASE_URL)
 html = BeautifulSoup(response.text, 'lxml')
