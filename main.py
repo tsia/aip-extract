@@ -52,7 +52,16 @@ def generate_pdf(title):
 	global images
 	tmp = tempfile.NamedTemporaryFile(suffix='.pdf')
 	tmp.write(img2pdf.convert(images))
-	ocrmypdf.ocr(input_file=tmp.name, output_file=f'output/{title}.pdf')
+	ocrmypdf.ocr(
+		input_file=tmp.name,
+		output_file=f'output/{title}.pdf',
+		language=['eng', 'deu'],
+		output_type='pdf',
+		optimize=2,
+		title=title,
+		author='DFS Deutsche Flugsicherung GmbH',
+		progress_bar=False,
+	)
 	tmp.close()
 	images = []
 
@@ -60,4 +69,4 @@ def generate_pdf(title):
 _, url = fetch_url(BASE_URL)
 BASE_URL = url
 
-fetch_folder("AIP", BASE_URL)
+fetch_folder('AIP', BASE_URL)
