@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-import requests
-import re
-import os
-import io
-import ocrmypdf
 import base64
-import tempfile
 import img2pdf
+import ocrmypdf
+import requests
+import tempfile
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://aip.dfs.de/basicVFR/'
