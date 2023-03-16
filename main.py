@@ -17,21 +17,20 @@ def fetch_folder(foldertitle, folderurl, depth = 0):
 	#print(folderurl)
 	response = requests.get(folderurl)
 	html = BeautifulSoup(response.text, 'lxml')
-	#print(response.status_code)
-	items = html.main.find_all('li')
+	items = html.main.find_all('a', class_=['folder-link', 'document-link'])
 
 	for item in items:
-		if 'folder-item' in item['class']:
-			title = item.find(class_="folder-name", attrs={"lang": "en"}).text
+		if 'folder-link' in item['class']:
+			title = item.find(class_='folder-name', attrs={'lang': 'en'}).text
 			print(title)
-			fetch_folder(title, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="folder-link")['href'], depth + 1)
-		if 'document-item' in item['class']:
-			documenttitle = item.find(class_="document-name", attrs={"lang": "en"}).text
+			fetch_folder(title, requests.compat.urljoin(BASE_URL, item.get('href')), depth + 1)
+		if 'document-link' in item['class']:
+			documenttitle = item.find(class_='document-name', attrs={'lang': 'en'}).text
 			print(f'  {documenttitle}')
-			fetch_document(documenttitle, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="document-link")['href'])
+			fetch_document(documenttitle, requests.compat.urljoin(BASE_URL, item.get('href')))
 
 		if depth == 0:
-			generate_pdf(title.split(' ')[0])
+			generate_pdf(title.strip())
 
 def fetch_document(documenttitle, documenturl):
 	global images
@@ -55,6 +54,7 @@ def generate_pdf(title):
 
 response = requests.get(BASE_URL)
 html = BeautifulSoup(response.text, 'lxml')
-url = re.search(r'.*url=([^\s]+).*', html.head.find(attrs={"http-equiv": "Refresh"})['content']).group(1)
+# The original base URL redirects to the current version of the AIP
+BASE_URL = response.url
 
-fetch_folder("AIP", BASE_URL + url)
+fetch_folder("AIP", BASE_URL)
