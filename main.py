@@ -26,7 +26,7 @@ def fetch_html(url):
 def fetch_folder(foldertitle, folderurl, depth = 0):
 	#print(folderurl)
 	html = fetch_html(folderurl)
-	items = html.main.find_all('a', class_=['folder-link', 'document-link'])
+	items = html.find_all('a', class_=['folder-link', 'document-link'])
 
 	for item in items:
 		if 'folder-link' in item['class']:
@@ -38,7 +38,7 @@ def fetch_folder(foldertitle, folderurl, depth = 0):
 			print(f'  {documenttitle}')
 			fetch_document(documenttitle, requests.compat.urljoin(BASE_URL, item.get('href')))
 
-		if depth == 0:
+		if depth == 0 and len(images) > 0:
 			generate_pdf(title.strip())
 
 def fetch_document(documenttitle, documenturl):
@@ -53,6 +53,7 @@ def generate_pdf(title):
 	global images
 	tmp = tempfile.NamedTemporaryFile(suffix='.pdf')
 	tmp.write(img2pdf.convert(images))
+	print(f'  -> Running OCR on {title}')
 	ocrmypdf.ocr(
 		input_file=tmp.name,
 		output_file=f'output/{title}.pdf',
