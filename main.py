@@ -1,60 +1,74 @@
 #!/usr/bin/env python3
-import requests
-import re
-import os
-import io
-import ocrmypdf
 import base64
+import img2pdf
+import ocrmypdf
+import requests
 import tempfile
-from PIL import Image
 from bs4 import BeautifulSoup
 
 BASE_URL = 'https://aip.dfs.de/basicVFR/'
 
 images = []
 
+def fetch_url(url):
+	session = requests.Session()
+	response = session.get(url)
+	# The AIP website sends us a misleading header `Content-Type: text/html`
+	# which results in the default ISO-8859-1 encoding. Hence we override
+	# encoding by an educated guess
+	response.encoding = 'utf-8'
+	#print(f'Fetching {url} ({response.status_code})')
+	return response.text, response.url
+
+def fetch_html(url):
+	return BeautifulSoup(fetch_url(url)[0], 'lxml')
+
 def fetch_folder(foldertitle, folderurl, depth = 0):
 	#print(folderurl)
-	response = requests.get(folderurl)
-	html = BeautifulSoup(response.text, 'lxml')
-	#print(response.status_code)
-	items = html.main.find_all('li')
+	html = fetch_html(folderurl)
+	items = html.find_all('a', class_=['folder-link', 'document-link'])
 
 	for item in items:
-		if 'folder-item' in item['class']:
-			title = item.find(class_="folder-name", attrs={"lang": "en"}).text
+		if 'folder-link' in item['class']:
+			title = item.find(class_='folder-name', attrs={'lang': 'en'}).text
 			print(title)
-			fetch_folder(title, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="folder-link")['href'], depth + 1)
-		if 'document-item' in item['class']:
-			documenttitle = item.find(class_="document-name", attrs={"lang": "en"}).text
+			fetch_folder(title, requests.compat.urljoin(BASE_URL, item.get('href')), depth + 1)
+		if 'document-link' in item['class']:
+			documenttitle = item.find(class_='document-name', attrs={'lang': 'en'}).text
 			print(f'  {documenttitle}')
-			fetch_document(documenttitle, BASE_URL + re.sub(r'[^/]+\.html$', '', url) + item.find(class_="document-link")['href'])
+			fetch_document(documenttitle, requests.compat.urljoin(BASE_URL, item.get('href')))
 
-		if depth == 0:
-			generate_pdf(title.split(' ')[0])
+		if depth == 0 and len(images) > 0:
+			generate_pdf(title.strip())
 
 def fetch_document(documenttitle, documenturl):
 	global images
 	#print(documenturl)
-	response = requests.get(documenturl)
-	html = BeautifulSoup(response.text, 'lxml')
-	#print(response.status_code)
-	image = html.main.find('img')
-	imagedata = base64.b64decode(re.sub(r'^data:image/png;base64,', '', image['src']))
-	images.append(Image.open(io.BytesIO(imagedata)).convert('RGB'))
+	html = fetch_html(documenturl)
+	image = html.main.find('img', id='imgAIP').get('src')
+	imagedata = image.split('data:image/png;base64,')[1]
+	images.append(base64.decodebytes(imagedata.encode('ascii')))
 
 def generate_pdf(title):
 	global images
-	first_image = images[0]
-	images.pop(0)
-	tmpfile = tempfile.mkstemp()[1]
-	first_image.save(tmpfile, format='pdf', save_all=True, append_images=images)
+	tmp = tempfile.NamedTemporaryFile(suffix='.pdf')
+	tmp.write(img2pdf.convert(images))
+	print(f'  -> Running OCR on {title}')
+	ocrmypdf.ocr(
+		input_file=tmp.name,
+		output_file=f'output/{title}.pdf',
+		language=['eng', 'deu'],
+		output_type='pdf',
+		optimize=2,
+		title=title,
+		author='DFS Deutsche Flugsicherung GmbH',
+		progress_bar=False,
+	)
+	tmp.close()
 	images = []
-	ocrmypdf.ocr(input_file = tmpfile, output_file = f'output/{title}.pdf')
-	os.unlink(tmpfile)
 
-response = requests.get(BASE_URL)
-html = BeautifulSoup(response.text, 'lxml')
-url = re.search(r'.*url=([^\s]+).*', html.head.find(attrs={"http-equiv": "Refresh"})['content']).group(1)
+# The original base URL redirects to the current version of the AIP
+_, url = fetch_url(BASE_URL)
+BASE_URL = url
 
-fetch_folder("AIP", BASE_URL + url)
+fetch_folder('AIP', BASE_URL)

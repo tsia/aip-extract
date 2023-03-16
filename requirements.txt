@@ -1,5 +1,5 @@
 beautifulsoup4
 lxml
 ocrmypdf
-Pillow
 requests
+img2pdf
