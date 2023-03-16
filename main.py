@@ -11,7 +11,8 @@ BASE_URL = 'https://aip.dfs.de/basicVFR/'
 images = []
 
 def fetch_url(url):
-	response = requests.get(url)
+	session = requests.Session()
+	response = session.get(url)
 	# The AIP website sends us a misleading header `Content-Type: text/html`
 	# which results in the default ISO-8859-1 encoding. Hence we override
 	# encoding by an educated guess
