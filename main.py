@@ -52,7 +52,8 @@ def fetch_document(documenttitle, documenturl):
 def generate_pdf(title):
 	global images
 	tmp = tempfile.NamedTemporaryFile(suffix='.pdf')
-	tmp.write(img2pdf.convert(images))
+	layout= img2pdf.get_fixed_dpi_layout_fun((150, 150)) # Force 150dpi which results in A5
+	tmp.write(img2pdf.convert(images, layout_fun=layout))
 	print(f'  -> Running OCR on {title}')
 	ocrmypdf.ocr(
 		input_file=tmp.name,
