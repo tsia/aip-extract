@@ -13,10 +13,21 @@ BASE_URL = 'https://aip.dfs.de/basicVFR/'
 
 images = []
 
+def fetch_url(url):
+	response = requests.get(url)
+	# The AIP website sends us a misleading header `Content-Type: text/html`
+	# which results in the default ISO-8859-1 encoding. Hence we override
+	# encoding by an educated guess
+	response.encoding = 'utf-8'
+	#print(f'Fetching {url} ({response.status_code})')
+	return response.text, response.url
+
+def fetch_html(url):
+	return BeautifulSoup(fetch_url(url)[0], 'lxml')
+
 def fetch_folder(foldertitle, folderurl, depth = 0):
 	#print(folderurl)
-	response = requests.get(folderurl)
-	html = BeautifulSoup(response.text, 'lxml')
+	html = fetch_html(folderurl)
 	items = html.main.find_all('a', class_=['folder-link', 'document-link'])
 
 	for item in items:
@@ -35,9 +46,7 @@ def fetch_folder(foldertitle, folderurl, depth = 0):
 def fetch_document(documenttitle, documenturl):
 	global images
 	#print(documenturl)
-	response = requests.get(documenturl)
-	html = BeautifulSoup(response.text, 'lxml')
-	#print(response.status_code)
+	html = fetch_html(documenturl)
 	image = html.main.find('img', id='imgAIP').get('src')
 	imagedata = image.split('data:image/png;base64,')[1]
 	images.append(base64.decodebytes(imagedata.encode('ascii')))
@@ -50,9 +59,8 @@ def generate_pdf(title):
 	tmp.close()
 	images = []
 
-response = requests.get(BASE_URL)
-html = BeautifulSoup(response.text, 'lxml')
 # The original base URL redirects to the current version of the AIP
-BASE_URL = response.url
+_, url = fetch_url(BASE_URL)
+BASE_URL = url
 
 fetch_folder("AIP", BASE_URL)
