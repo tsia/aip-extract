@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 BASE_URL = 'https://aip.dfs.de/basicVFR/'
 
 images = []
+seen = []
 
 def fetch_url(url):
 	session = requests.Session()
@@ -35,8 +36,12 @@ def fetch_folder(foldertitle, folderurl, depth = 0):
 			fetch_folder(title, requests.compat.urljoin(BASE_URL, item.get('href')), depth + 1)
 		if 'document-link' in item['class']:
 			documenttitle = item.find(class_='document-name', attrs={'lang': 'en'}).text
-			print(f'  {documenttitle}')
-			fetch_document(documenttitle, requests.compat.urljoin(BASE_URL, item.get('href')))
+			url = requests.compat.urljoin(BASE_URL, item.get('href'))
+			if url not in seen:
+				print(f'  {documenttitle}')
+				fetch_document(documenttitle, url)
+			else:
+				print(f'  {documenttitle} (skipping, seen already)')
 
 		if depth == 0 and len(images) > 0:
 			generate_pdf(title.strip())
@@ -48,6 +53,7 @@ def fetch_document(documenttitle, documenturl):
 	image = html.main.find('img', id='imgAIP').get('src')
 	imagedata = image.split('data:image/png;base64,')[1]
 	images.append(base64.decodebytes(imagedata.encode('ascii')))
+	seen.append(documenturl)
 
 def generate_pdf(title):
 	global images
