@@ -1,22 +1,22 @@
-FROM ubuntu:22.10
+FROM ubuntu:24.04
+
 RUN apt-get update \
-    && apt-get install tesseract-ocr \
-    python3 \
-    python3-pip \
-	ghostscript \
-	pngquant \
-	unpaper \
-    -y \	
-    && apt-get clean \
-    && apt-get autoremove
+    &&  apt-get install -y \
+        tesseract-ocr \
+        tesseract-ocr-deu \
+        python3 \
+        python3-pip \
+        ghostscript \
+        pngquant \
+        unpaper \
+        jbig2 \
+    &&  apt-get clean \
+    &&  apt-get autoremove
 
-ADD . /home/App
-WORKDIR /home/App
+WORKDIR /app
+COPY requirements.txt .
+RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
 
-COPY requirements.txt ./
+COPY main.py .
 
-RUN pip3  install --no-cache-dir -r requirements.txt
-RUN PATH=""
-COPY . .
-
-CMD [ "python3", "./main.py" ]
+CMD [ "python3", "/app/main.py" ]
