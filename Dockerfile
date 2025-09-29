@@ -1,22 +1,28 @@
 FROM ubuntu:24.04
 
-RUN apt-get update \
-    &&  apt-get install -y \
+RUN apt update \
+    && apt -y install ca-certificates
+
+RUN sed -e 's/http:/https:/g' -i /etc/apt/sources.list /etc/apt/sources.list.d/*
+
+RUN apt update \
+    &&  apt -y install \
         tesseract-ocr \
         tesseract-ocr-deu \
         python3 \
         python3-pip \
+        python3-venv \
         ghostscript \
         pngquant \
         unpaper \
         jbig2 \
-    &&  apt-get clean \
-    &&  apt-get autoremove
+    &&  apt clean \
+    &&  apt autoremove
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip3 install --break-system-packages --no-cache-dir -r requirements.txt
+RUN python3 -m venv venv && ./venv/bin/pip3 install --no-cache-dir -r requirements.txt && rm requirements.txt
 
 COPY main.py .
 
-CMD [ "python3", "/app/main.py" ]
+CMD [ "./venv/bin/python3", "/app/main.py" ]
