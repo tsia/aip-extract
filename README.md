@@ -8,14 +8,16 @@ As the DFS now publishes the AIP-VFR online but each page only as an image and d
 - Docker: Optionally run the tool as a Docker container
 
 ## Use standalone
-Install the requirements, these are: `python3 python3-pip Ghostscript Tesseract jbig2enc pngquant unpaper`
+Install the requirements, these are: `python3 python3-pip python3-venv ghostscript tesseract-ocr tesseract-ocr-deu jbig2 pngquant unpaper`
 As well as the python packages with `pip install -r requirements.txt` to install dependencies. Then run `main.py`. this will scrape the DFS website, fetch all AIP VFR pages thate are provided as images (!), stick them together into PDF files and run OCR on it.
 
 PDFs will be stored in the `output` folder.
 
 Example code on Ubuntu:
 ```bash
-sudo apt install python3  python3-pip Ghostscript Tesseract, jbig2enc, pngquant, unpaper
+sudo apt install python3{,-pip,-venv} ghostscript tesseract-ocr{,-deu,-eng} jbig2 pngquant unpaper
+python3 -m venv venv
+source venv/bin/activate
 pip3 install -r requirements.txt
 mkdir output
 python3 main.py
