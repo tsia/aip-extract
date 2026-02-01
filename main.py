@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import base64
 import img2pdf
-import ocrmypdf
+from ocrmypdf import ocr
+from ocrmypdf._options import OcrOptions
 import requests
 import tempfile
 from bs4 import BeautifulSoup
@@ -71,16 +72,16 @@ def generate_pdf(title):
     )  # Force 150dpi which results in A5
     tmp.write(img2pdf.convert(images, layout_fun=layout))
     print(f"  -> Running OCR on {title}")
-    ocrmypdf.ocr(
+    ocr(OcrOptions(
         input_file=tmp.name,
         output_file=f"output/{title}.pdf",
-        language=["eng", "deu"],
+        languages=["eng", "deu"],
         output_type="pdf",
         optimize=2,
         title=title,
         author="DFS Deutsche Flugsicherung GmbH",
         progress_bar=False,
-    )
+    ))
     tmp.close()
     images = []
 
