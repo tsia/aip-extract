@@ -78,6 +78,7 @@ def generate_pdf(title):
         languages=["eng", "deu"],
         output_type="pdf",
         optimize=2,
+        png_quality=70,
         title=title,
         author="DFS Deutsche Flugsicherung GmbH",
         progress_bar=False,
