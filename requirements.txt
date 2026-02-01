@@ -1,5 +1,5 @@
-beautifulsoup4
-lxml
-ocrmypdf
-requests
-img2pdf
+beautifulsoup4==4.14.3
+lxml==6.0.2
+ocrmypdf==16.13.0
+requests==2.32.5
+img2pdf==0.6.3
